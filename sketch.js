@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", function() {
             errorMsg.style.alignItems="center";
             errorMsg.style.justifyContent="center";
             errorMsg.style.fontSize="48px";
-            errorMsg.innerText="Error. Code 101: Unexpected Glitch Detected. Check your computer for viruses!";
+            errorMsg.innerText="Error. Code 101: Unexpected Glitch Detected.Check your computer for viruses!";
             document.body.appendChild(errorMsg);
 
             setTimeout(function(){
