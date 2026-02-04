@@ -1,16 +1,13 @@
 document.addEventListener("DOMContentLoaded", function() {
     var startScreen = document.getElementById("startScreen");
     var startButton = document.getElementById("startButton");
+    var instructions = document.getElementById("instructions");
     var gameContainer = document.getElementById("game-container");
-    var player = document.getElementById("player");
     var scoreText = document.getElementById("score");
-
-    gameContainer.style.display = "none";
-
-    startButton.addEventListener("click", function() {
-        startScreen.style.display = "none";
-        gameContainer.style.display = "block";
-    });
+    var player = document.getElementById("player");
+    var errorScreen = document.getElementById("errorScreen");
+    var replayButton = document.getElementById("replayButton");
+    var floatingBackground = document.getElementById("floating-background");
 
     var tileSize = 40;
     var playerX = 60;
@@ -18,9 +15,14 @@ document.addEventListener("DOMContentLoaded", function() {
     var speed = 5;
     var score = 0;
     var dots = [];
+    var glitching = false;
+    var gameOver = false;
 
-    player.style.left = playerX + "px";
-    player.style.top = playerY + "px";
+    gameContainer.style.display = "none";
+    errorScreen.style.display = "none";
+    replayButton.style.display = "none";
+    instructions.style.display = "none";
+    document.body.style.backgroundColor = "black";
 
     var maze = [
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -40,37 +42,48 @@ document.addEventListener("DOMContentLoaded", function() {
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
     ];
 
-    // Build maze tiles
-    for (var y = 0; y < maze.length; y++) {
-        for (var x = 0; x < maze[y].length; x++) {
-            var tile = document.createElement("div");
-            tile.style.width = tileSize + "px";
-            tile.style.height = tileSize + "px";
-            tile.style.position = "absolute";
-            tile.style.left = x * tileSize + "px";
-            tile.style.top = y * tileSize + "px";
-            tile.style.backgroundColor = maze[y][x] === 1 ? "#000" : "#222";
-            tile.classList.add(maze[y][x] === 1 ? "wall" : "floor");
-            gameContainer.appendChild(tile);
-        }
-    }
+    function createMaze() {
+        gameContainer.style.position = "relative";
+        gameContainer.style.width = tileSize * maze[0].length + "px";
+        gameContainer.style.height = tileSize * maze.length + "px";
+        gameContainer.style.margin = "50px auto";
+        gameContainer.style.backgroundColor = "#000";
 
-    // Place dots
-    for (var y = 0; y < maze.length; y++) {
-        for (var x = 0; x < maze[y].length; x++) {
-            if (maze[y][x] === 0 && Math.random() < 0.6) {
-                var dot = document.createElement("div");
-                dot.className = "dot";
-                dot.style.width = "12px";
-                dot.style.height = "12px";
-                dot.style.position = "absolute";
-                dot.style.left = x * tileSize + tileSize/2 - 6 + "px";
-                dot.style.top = y * tileSize + tileSize/2 - 6 + "px";
-                gameContainer.appendChild(dot);
-                dots.push(dot);
+        for (var y = 0; y < maze.length; y++) {
+            for (var x = 0; x < maze[y].length; x++) {
+                var tile = document.createElement("div");
+                tile.style.width = tileSize + "px";
+                tile.style.height = tileSize + "px";
+                tile.style.position = "absolute";
+                tile.style.left = x * tileSize + "px";
+                tile.style.top = y * tileSize + "px";
+                tile.style.backgroundColor = maze[y][x] === 1 ? "#424141" : "#000";
+                gameContainer.appendChild(tile);
+            }
+        }
+
+        for (var y = 0; y < maze.length; y++) {
+            for (var x = 0; x < maze[y].length; x++) {
+                if (maze[y][x] === 0 && Math.random() < 0.5) {
+                    var dot = document.createElement("div");
+                    dot.className = "dot";
+                    dot.style.width = "10px";
+                    dot.style.height = "10px";
+                    dot.style.position = "absolute";
+                    dot.style.left = x * tileSize + tileSize / 2 - 5 + "px";
+                    dot.style.top = y * tileSize + tileSize / 2 - 5 + "px";
+                    dot.style.backgroundColor = "white";
+                    dot.style.borderRadius = "50%";
+                    gameContainer.appendChild(dot);
+                    dots.push(dot);
+                }
             }
         }
     }
+
+    player.style.position = "absolute";
+    player.style.left = playerX + "px";
+    player.style.top = playerY + "px";
 
     function canMove(newX, newY) {
         var gridX = Math.floor(newX / tileSize);
@@ -95,104 +108,176 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    setInterval(function() {
-        for (var i = 0; i < dots.length; i++) {
-            var dot = dots[i];
-            var dotX = parseInt(dot.style.left);
-            var dotY = parseInt(dot.style.top);
-            if (playerX < dotX + 12 && playerX + 20 > dotX && playerY < dotY + 12 && playerY + 20 > dotY) {
-                dot.remove();
-                dots.splice(i, 1);
+    var floatingDots = [];
+    function createFloatingDots(count){
+        for(var i=0;i<count;i++){
+            var dot = document.createElement("div");
+            dot.classList.add("floating-dot");
+            dot.style.width = "6px";
+            dot.style.height = "6px";
+            dot.style.borderRadius = "50%";
+            dot.style.position = "absolute";
+            dot.style.left = Math.random()*window.innerWidth + "px";
+            dot.style.top = Math.random()*window.innerHeight + "px";
+            dot.style.backgroundColor = "rgb("+randColor()+","+randColor()+","+randColor()+")";
+            floatingBackground.appendChild(dot);
+            floatingDots.push({el:dot, x:parseFloat(dot.style.left), y:parseFloat(dot.style.top), vx:(Math.random()*2-1)*0.5, vy:(Math.random()*2-1)*0.5});
+        }
+    }
+    function animateFloatingDots(){
+        floatingDots.forEach(function(dot){
+            dot.x += dot.vx;
+            dot.y += dot.vy;
+            if(dot.x<0||dot.x>window.innerWidth-6) dot.vx*=-1;
+            if(dot.y<0||dot.y>window.innerHeight-6) dot.vy*=-1;
+            dot.el.style.left = dot.x + "px";
+            dot.el.style.top = dot.y + "px";
+        });
+        requestAnimationFrame(animateFloatingDots);
+    }
+    function randColor(){return Math.floor(Math.random()*256);}
+    createFloatingDots(50);
+    animateFloatingDots();
+
+    var overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = "100vw";
+    overlay.style.height = "100vh";
+    overlay.style.pointerEvents = "none";
+    overlay.style.zIndex = 999;
+    document.body.appendChild(overlay);
+
+    startButton.addEventListener("click", function() {
+        startScreen.style.display = "none";
+        instructions.style.display = "flex";
+        setTimeout(function(){
+            instructions.style.display = "none";
+            gameContainer.style.display = "block";
+            createMaze();
+        }, 2000);
+    });
+
+    setInterval(function(){
+        for(var i=0;i<dots.length;i++){
+            var dot=dots[i];
+            var dotX=parseInt(dot.style.left);
+            var dotY=parseInt(dot.style.top);
+            if(playerX<dotX+10 && playerX+20>dotX && playerY<dotY+10 && playerY+20>dotY){
+                dot.style.display="none";
+                dots.splice(i,1);
                 i--;
                 score++;
                 scoreText.innerHTML = score;
+
+                if(score === 10 || score === 15){
+                    triggerGlitch(false);
+                }
+
+                if(score === 20){
+                    finalGlitch();
+                }
             }
         }
-    }, 50);
-// ---- GLITCH SEQUENCES ----
-var done10 = false;
-var done15 = false;
-var done20 = false;
+    },50);
 
-function mildGlitch(duration) {
-    var overlay = document.getElementById("gameOverlay");
-    var start = Date.now();
-    var interval = setInterval(function() {
-        gameContainer.style.transform = `translate(${randInt(-4,4)}px,${randInt(-4,4)}px)`;
-        gameContainer.style.filter = `hue-rotate(${randInt(0,360)}deg)`;
-        overlay.style.backgroundColor = `rgba(${randInt(0,255)},${randInt(0,255)},${randInt(0,255)},${Math.random()*0.3})`;
-        spawnGlitchBoxes(6);
-        if (Date.now() - start >= duration) {
-            clearInterval(interval);
-            gameContainer.style.transform = "";
-            gameContainer.style.filter = "";
+    function triggerGlitch(strong = false) {
+        var duration = strong ? 400 : 900;
+        var intensity = strong ? 70 : 20;
+
+        for (var i = 0; i < gameContainer.children.length; i++) {
+            var c = gameContainer.children[i];
+            if (!c.classList.contains("dot") && c.id !== "player") {
+                var offsetX = Math.random() * intensity - intensity / 2;
+                var offsetY = Math.random() * intensity - intensity / 2;
+                c.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            }
+        }
+
+        overlay.style.backgroundColor = `rgba(${randColor()},${randColor()},${randColor()},${Math.random() * 0.6})`;
+
+        if (strong) {
+            var newX = playerX + (Math.random() * intensity - intensity / 2);
+            var newY = playerY + (Math.random() * intensity - intensity / 2);
+            playerX = Math.max(0, Math.min(newX, gameContainer.offsetWidth - 20));
+            playerY = Math.max(0, Math.min(newY, gameContainer.offsetHeight - 20));
+            player.style.left = playerX + "px";
+            player.style.top = playerY + "px";
+        }
+
+        if (!strong) {
+            setTimeout(function () {
+                overlay.style.backgroundColor = "rgba(0,0,0,0)";
+                for (var i = 0; i < gameContainer.children.length; i++) {
+                    var c = gameContainer.children[i];
+                    if (!c.classList.contains("dot") && c.id !== "player") {
+                        c.style.transform = "translate(0,0)";
+                    }
+                }
+            }, duration);
+        }
+    }
+
+    function finalGlitch() {
+        var flashDuration = 5000;
+        var flashInterval = setInterval(function() {
+            overlay.style.backgroundColor = "rgba("+randColor()+","+randColor()+","+randColor()+","+(Math.random()*0.8+0.2)+")";
+
+            for(var j=0;j<gameContainer.children.length;j++){
+                var c = gameContainer.children[j];
+                if(Math.random()>0.5){
+                    var offsetX = Math.random()*100-50;
+                    var offsetY = Math.random()*100-50;
+                    c.style.left = Math.max(0, Math.min(parseInt(c.style.left||0)+offsetX, gameContainer.offsetWidth-40))+"px";
+                    c.style.top = Math.max(0, Math.min(parseInt(c.style.top||0)+offsetY, gameContainer.offsetHeight-40))+"px";
+                    c.style.backgroundColor="rgb("+randColor()+","+randColor()+","+randColor()+")";
+                }
+            }
+
+            var newX = playerX + (Math.random()*50-25);
+            var newY = playerY + (Math.random()*50-25);
+            playerX = Math.max(0, Math.min(newX, gameContainer.offsetWidth-20));
+            playerY = Math.max(0, Math.min(newY, gameContainer.offsetHeight-20));
+            player.style.left = playerX + "px";
+            player.style.top = playerY + "px";
+
+        },50);
+
+        setTimeout(function(){
+            clearInterval(flashInterval);
             overlay.style.backgroundColor = "rgba(0,0,0,0)";
-        }
-    }, 80);
-}
+            gameOver = true;
 
-function strongerGlitch(duration) {
-    var overlay = document.getElementById("gameOverlay");
-    var start = Date.now();
-    var interval = setInterval(function() {
-        gameContainer.style.transform = `translate(${randInt(-8,8)}px,${randInt(-8,8)}px)`;
-        gameContainer.style.filter = `hue-rotate(${randInt(0,360)}deg) saturate(3)`;
-        overlay.style.backgroundColor = `rgba(${randInt(0,255)},${randInt(0,255)},${randInt(0,255)},${Math.random()*0.5})`;
-        spawnGlitchBoxes(12);
-        if (Date.now() - start >= duration) {
-            clearInterval(interval);
-            gameContainer.style.transform = "";
-            gameContainer.style.filter = "";
-            overlay.style.backgroundColor = "rgba(0,0,0,0)";
-        }
-    }, 80);
-}
+            document.body.innerHTML="";
+            var errorMsg = document.createElement("div");
+            errorMsg.style.width="50vw";
+            errorMsg.style.height="50vh";
+            errorMsg.style.backgroundColor="black";
+            errorMsg.style.color="white";
+            errorMsg.style.display="flex";
+            errorMsg.style.flexDirection="column";
+            errorMsg.style.alignItems="center";
+            errorMsg.style.justifyContent="center";
+            errorMsg.style.fontSize="48px";
+            errorMsg.innerText="Error. Code 101: Unexpected Glitch Detected.";
+            document.body.appendChild(errorMsg);
 
-function intenseCrash(duration, callback) {
-    var overlay = document.getElementById("gameOverlay");
-    var start = Date.now();
-    var interval = setInterval(function() {
-        gameContainer.style.transform = `translate(${randInt(-16,16)}px,${randInt(-16,16)}px)`;
-        gameContainer.style.filter = `hue-rotate(${randInt(0,360)}deg) saturate(4)`;
-        overlay.style.backgroundColor = `rgba(${randInt(0,255)},${randInt(0,255)},${randInt(0,255)},${Math.random()*0.7})`;
-        spawnGlitchBoxes(20);
-        if (Date.now() - start >= duration) {
-            clearInterval(interval);
-            if (callback) callback();
-        }
-    }, 80);
-}
+            setTimeout(function(){
+                var replayBtn = document.createElement("button");
+                replayBtn.innerText = "REPLAY";
+                replayBtn.style.marginTop = "40px";
+                replayBtn.style.padding = "10px 40px";
+                replayBtn.style.fontSize = "24px";
+                replayBtn.style.cursor = "pointer";
+                replayBtn.style.backgroundColor = "white";
+                replayBtn.style.color = "black";
+                replayBtn.style.border = "none";
+                errorMsg.appendChild(replayBtn);
 
-function checkGlitchTriggers() {
-    if (score >= 10 && !done10) {
-        done10 = true;
-        mildGlitch(1200);
+                replayBtn.addEventListener("click",function(){location.reload();});
+            },5000);
+
+        }, flashDuration);
     }
-    if (score >= 15 && !done15) {
-        done15 = true;
-        strongerGlitch(1800);
-    }
-    if (score >= 20 && !done20) {
-        done20 = true;
-        intenseCrash(5000, function() {
-            // AFTER INTENSE CRASH => show final screen
-            gameContainer.style.display = "none";
-            document.body.innerHTML = ""; // clear everything
-            var errDiv = document.createElement("div");
-            errDiv.style.cssText = "width:100vw;height:100vh;background:black;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:48px;";
-            errDiv.innerText = "FILE DOES NOT EXIST";
-            document.body.appendChild(errDiv);
-
-            var btn = document.createElement("button");
-            btn.innerText = "REPLAY";
-            btn.style.cssText = "margin-top:30px;padding:12px 40px;font-size:24px;cursor:pointer;";
-            errDiv.appendChild(btn);
-
-            setTimeout(function() {
-                btn.style.display = "block";
-            }, 5000);
-
-            btn.addEventListener("click", function() { location.reload(); });
-        });
-    }
-}
+});
