@@ -252,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function() {
             document.body.innerHTML="";
             var errorMsg = document.createElement("div");
             errorMsg.style.width="50vw";
-            errorMsg.style.height="50vh";
+            errorMsg.style.height="vh";
             errorMsg.style.backgroundColor="black";
             errorMsg.style.color="white";
             errorMsg.style.display="flex";
@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", function() {
             errorMsg.style.alignItems="center";
             errorMsg.style.justifyContent="center";
             errorMsg.style.fontSize="48px";
-            errorMsg.innerText="Error. Code 101: Unexpected Glitch Detected.";
+            errorMsg.innerText="Error. Code 101: Unexpected Glitch Detected. Check your computer for viruses!";
             document.body.appendChild(errorMsg);
 
             setTimeout(function(){
