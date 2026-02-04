@@ -1,18 +1,56 @@
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family:'Arial Narrow', sans-serif;
-}
-canvas {
-  display: block;
+@font-face {
+  font-family: 'CustomFont';
+  src: url('../Assets/Fonts/Pixelation.ttf') format('truetype');
 }
 
-h1 {
-color: hsl(313, 100%, 50%)
-text-align: center;
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-Selector {
-  property: property value;
-  property2: property value;
+body {
+    background-color:black;
+    color: white;
+    font-family: 'CustomFont';
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+#game-container {
+   position: relative;
+   width: 600px;
+   height: 600px;
+   border: 3px solid white;
+   background-color: #111;
+   overflow: hidden;
+
+}
+
+#player {
+    position:absolute;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+}
+
+.dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: yellow;
+    border-radius: 50%;
+}
+
+#score {
+    margin-top: 20px;
+    font-size: 24px;
 }
