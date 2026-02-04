@@ -1,2 +1,32 @@
-<script src="sketch.js"></script>
-<link rel="stylesheet" href="style.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Corrupt.exe</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="floating-background"></div>
+
+  <div id="startScreen">
+    <h1>Corrupt.exe</h1>
+    <button id="startButton">PLAY</button>
+    <p id="credits">Created by Luna Hernandez</p>
+  </div>
+
+  <div id="instructions">Goal: Collect all the dots to move on to the next stage!</div>
+
+  <div id="game-container">
+    <div id="player"></div>
+  </div>
+
+  <div id="score-container">
+    Score: <span id="score">0</span>
+  </div>
+
+  <div id="errorScreen">File Not Found</div>
+  <button id="replayButton">REPLAY</button>
+
+  <script src="sketch.js"></script>
+</body>
+</html>
